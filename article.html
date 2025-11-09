@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Article</title>
+  <style>
+    body{font-family:Inter,system-ui;margin:0;padding:2rem;background:#f7f9ff;color:#111}
+    .card{background:white;padding:2rem;max-width:800px;margin:auto;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+    .meta{color:#666;font-size:14px;margin-bottom:1rem}
+    .disclaimer{color:#b91c1c;font-weight:700;margin-top:2rem}
+    a{color:#0b5cff;text-decoration:none}
+  </style>
+</head>
+<body>
+  <a href="index.html">← Back to Home</a>
+  <article class="card" id="article"></article>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCM4HXWCmywdXsZzH0MfR3ZxDHXabSFQs0",
+      authDomain: "first-website-81957.firebaseapp.com",
+      projectId: "first-website-81957",
+      storageBucket: "first-website-81957.firebasestorage.app",
+      messagingSenderId: "1086322670543",
+      appId: "1:1086322670543:web:c55f801b988bb5bbf870ba",
+      measurementId: "G-8MX4G74JZ1"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    const articleEl = document.getElementById('article');
+
+    if(!id) {
+      articleEl.innerHTML = '<p>Article not found.</p>';
+    } else {
+      const articleRef = ref(db, 'articles/' + id);
+      get(articleRef).then(snapshot => {
+        if(!snapshot.exists()) {
+          articleEl.innerHTML = '<p>Article not found.</p>';
+          return;
+        }
+        const a = snapshot.val();
+        articleEl.innerHTML = `
+          <h1>${a.title}</h1>
+          <div class=\"meta\">By ${a.author || 'Anonymous'} • ${a.category || 'General'} • ${new Date(a.date).toLocaleString()}</div>
+          ${a.content.split(/\\n\\s*\\n/).map(p=>`<p>${p}</p>`).join('')}
+          ${a.disclaimer ? `<p class='disclaimer'>${a.disclaimer}</p>`:''}
+        `;
+      });
+    }
+  </script>
+</body>
+</html>

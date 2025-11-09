@@ -1,37 +1,74 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My News Website</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Global News — Live Feed</title>
+  <style>
+    body{font-family:Inter,system-ui,sans-serif;margin:0;padding:2rem;background:#f7f9ff;color:#111}
+    header{text-align:center;margin-bottom:2rem}
+    header h1{margin:0;color:#0b5cff}
+    .articles{display:grid;gap:1rem;max-width:900px;margin:auto}
+    .card{background:white;padding:1.5rem;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+    .card:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08)}
+    .meta{color:#666;font-size:14px;margin-bottom:0.5rem}
+    a{text-decoration:none;color:#0b5cff;font-weight:600}
+    footer{text-align:center;color:#888;margin-top:3rem;font-size:14px}
+    .btn{background:#0b5cff;color:white;border:none;padding:0.6rem 1.2rem;border-radius:8px;font-weight:600;cursor:pointer}
+  </style>
 </head>
 <body>
   <header>
-    <h1>Global News</h1>
+    <h1>🌐 Global News</h1>
+    <p>Stay updated in real time</p>
+    <a href="create.html" class="btn">Create New Article</a>
   </header>
 
-  <main>
-    <section id="news-section" class="news-container">
-      <article class="news-article">
-        <h2>Breaking: New Technology Trends in 2025</h2>
-        <p>Tech companies are pushing boundaries with AI, quantum computing, and green innovation...</p>
-        <button class="remove-btn">Remove</button>
-      </article>
-    </section>
+  <section class="articles" id="articles"></section>
 
-    <section class="add-article-form">
-      <h2>Add a New Article</h2>
-      <input type="text" id="title" placeholder="Article Title" />
-      <textarea id="content" placeholder="Article Content"></textarea>
-      <button id="add-btn">Add Article</button>
-    </section>
-  </main>
+  <footer>© 2025 Global News</footer>
 
-  <footer>
-    <p>© 2025 Global News</p>
-  </footer>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
-  <script src="script.js"></script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCM4HXWCmywdXsZzH0MfR3ZxDHXabSFQs0",
+      authDomain: "first-website-81957.firebaseapp.com",
+      projectId: "first-website-81957",
+      storageBucket: "first-website-81957.firebasestorage.app",
+      messagingSenderId: "1086322670543",
+      appId: "1:1086322670543:web:c55f801b988bb5bbf870ba",
+      measurementId: "G-8MX4G74JZ1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const articlesRef = ref(db, "articles");
+
+    const container = document.getElementById("articles");
+
+    onValue(articlesRef, snapshot => {
+      const data = snapshot.val();
+      container.innerHTML = "";
+      if (!data) {
+        container.innerHTML = "<p>No articles yet. Be the first to post!</p>";
+        return;
+      }
+
+      const list = Object.entries(data).reverse();
+      for (const [id, article] of list) {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <div class="meta">${article.category || "General"} • ${article.author || "Anonymous"} • ${new Date(article.date).toLocaleString()}</div>
+          <h2><a href="article.html?id=${id}">${article.title}</a></h2>
+          <p>${article.content.substring(0, 150)}...</p>
+        `;
+        container.appendChild(div);
+      }
+    });
+  </script>
 </body>
 </html>

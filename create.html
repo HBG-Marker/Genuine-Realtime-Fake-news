@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create New Article</title>
+  <style>
+    body{font-family:Inter,system-ui;margin:0;background:#f7f9ff;padding:2rem;color:#111}
+    form{max-width:700px;margin:auto;background:white;padding:2rem;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+    label{display:block;margin-top:1rem;font-weight:600}
+    input,textarea,select{width:100%;padding:0.6rem;margin-top:0.4rem;border:1px solid #ccc;border-radius:8px;font-size:15px}
+    button{margin-top:1rem;background:#0b5cff;color:white;border:none;padding:0.7rem 1.2rem;border-radius:8px;font-weight:600;cursor:pointer}
+    a{display:block;text-align:center;margin-top:1rem;color:#0b5cff}
+  </style>
+</head>
+<body>
+  <h1 style="text-align:center;color:#0b5cff;">✍️ Create a New Article</h1>
+  <form id="form">
+    <label>Title</label>
+    <input id="title" required />
+    <label>Author</label>
+    <input id="author" placeholder="Your name" />
+    <label>Category</label>
+    <select id="category">
+      <option>General</option>
+      <option>Tech</option>
+      <option>World</option>
+      <option>Business</option>
+    </select>
+    <label>Content</label>
+    <textarea id="content" rows="6" required></textarea>
+    <label>Disclaimer</label>
+    <input id="disclaimer" placeholder="Optional" />
+    <button type="submit">Publish</button>
+  </form>
+  <a href="index.html">← Back to Home</a>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCM4HXWCmywdXsZzH0MfR3ZxDHXabSFQs0",
+      authDomain: "first-website-81957.firebaseapp.com",
+      projectId: "first-website-81957",
+      storageBucket: "first-website-81957.firebasestorage.app",
+      messagingSenderId: "1086322670543",
+      appId: "1:1086322670543:web:c55f801b988bb5bbf870ba",
+      measurementId: "G-8MX4G74JZ1" 
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    document.getElementById("form").addEventListener("submit", e => {
+      e.preventDefault();
+      const data = {
+        title: title.value.trim(),
+        author: author.value.trim(),
+        category: category.value,
+        content: content.value.trim(),
+        disclaimer: disclaimer.value.trim(),
+        date: Date.now()
+      };
+      const newRef = push(ref(db, "articles"));
+      set(newRef, data).then(() => {
+        alert("Article published!");
+        window.location = "index.html";
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live News — Real-Time Updates</title>
+  <meta name="description" content="A modern news site with real-time article updates." />
+  <style>
+    :root{--accent:#0b5cff;--muted:#6b7280;--bg:#fbfcfe;--card:#ffffff;--maxwidth:1100px;--radius:12px;font-family:Inter,system-ui,Arial}
+    *{box-sizing:border-box}
+    body{margin:0;background:linear-gradient(180deg,#f7f9ff,#fbfcfe);color:#0b1320;padding:28px;display:flex;justify-content:center}
+    .wrap{width:100%;max-width:var(--maxwidth)}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+    .mark{width:78px;height:78px;border-radius:12px;background:#fff;display:grid;place-items:center;border:1px solid rgba(0,0,0,0.04);font-weight:700;color:var(--accent)}
+    h1{margin:0;font-size:26px}
+    .strap{color:var(--muted);font-size:13px}
+    main.grid{display:grid;grid-template-columns:1fr 360px;gap:18px}
+    @media(max-width:1000px){main.grid{grid-template-columns:1fr}}
+    article.card{background:var(--card);padding:20px;border-radius:var(--radius);box-shadow:0 8px 24px rgba(12,24,48,0.06);margin-bottom:18px;transition:all 0.3s ease}
+    .kicker{display:inline-block;padding:6px 10px;border-radius:999px;color:var(--accent);font-weight:700;background:rgba(11,92,255,0.06)}
+    h2{margin:12px 0;font-size:22px}
+    h3{margin:12px 0;font-size:18px}
+    .meta{color:var(--muted);font-size:13px;margin-bottom:12px}
+    p{margin:0 0 12px}
+    .disclaimer{color:#b91c1c;font-weight:800}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+    input,textarea,select{width:100%;padding:10px;border:1px solid rgba(0,0,0,0.08);border-radius:8px;margin-top:6px;font-size:14px}
+    textarea{min-height:100px}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;margin-top:12px}
+    .btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(11,92,255,0.12)}
+    .remove-btn{background:#fff;border:1px solid rgba(0,0,0,0.06);padding:8px 10px;border-radius:8px;cursor:pointer;margin-top:10px}
+    footer{margin-top:18px;color:var(--muted);font-size:13px;text-align:center}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="mark">LIVE</div>
+      <div>
+        <h1>Live News</h1>
+        <div class="strap">Stay updated in real time</div>
+      </div>
+      <div id="current-date" style="margin-left:auto;color:var(--muted)"></div>
+    </header>
+
+    <main class="grid">
+      <section id="news-feed"></section>
+
+      <aside class="sidebar">
+        <div class="card">
+          <h3>Add New Article</h3>
+          <form id="news-form">
+            <label for="kicker">Kicker</label>
+            <input id="kicker" type="text" placeholder="Breaking, Update..." />
+            <label for="title">Headline</label>
+            <input id="title" type="text" placeholder="Headline" required />
+            <label for="author">Author</label>
+            <input id="author" type="text" placeholder="Your name" />
+            <label for="category">Category</label>
+            <select id="category">
+              <option>General</option>
+              <option>World</option>
+              <option>Tech</option>
+              <option>Sports</option>
+              <option>Business</option>
+            </select>
+            <label for="content">Content</label>
+            <textarea id="content" placeholder="Write the article..." required></textarea>
+            <label for="disclaimer">Disclaimer</label>
+            <input id="disclaimer" type="text" placeholder="Optional" />
+            <button class="btn" type="submit">Publish</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>Live Updates</h3>
+          <p style="color:var(--muted)">Articles sync automatically across tabs.</p>
+        </div>
+      </aside>
+    </main>
+
+    <footer>© Live News — <span id="year"></span></footer>
+  </div>
+
+  <script>
+    const feed = document.getElementById('news-feed');
+    const form = document.getElementById('news-form');
+    const STORAGE_KEY = 'live_news_articles_v1';
+
+    function randomId() {return 'id-' + Math.random().toString(36).slice(2,9)};
+
+    function loadArticles(){
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {return []}
+    }
+
+    function saveArticles(data){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      window.dispatchEvent(new Event('storage')); // simulate real-time update locally
+    }
+
+    function renderArticles(){
+      const articles = loadArticles();
+      feed.innerHTML = articles.slice().reverse().map(a => `
+        <article class="card" id="${a.id}">
+          <div class="kicker">${a.kicker || ''}</div>
+          <h2>${a.title}</h2>
+          <div class="meta">By ${a.author || 'Unknown'} • ${a.category || 'General'} • ${new Date(a.updated).toLocaleString()}</div>
+          ${a.content.split(/\n\s*\n/).map(p=>`<p>${p}</p>`).join('')}
+          ${a.disclaimer ? `<p class='disclaimer'>${a.disclaimer}</p>`:''}
+          <button class="remove-btn" onclick="removeArticle('${a.id}')">Remove</button>
+        </article>
+      `).join('');
+    }
+
+    function addArticle(article){
+      const all = loadArticles();
+      all.push({...article, id:randomId(), updated:new Date().toISOString()});
+      saveArticles(all);
+    }
+
+    function removeArticle(id){
+      const filtered = loadArticles().filter(a => a.id !== id);
+      saveArticles(filtered);
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = {
+        kicker: form.kicker.value.trim(),
+        title: form.title.value.trim(),
+        author: form.author.value.trim(),
+        category: form.category.value,
+        content: form.content.value.trim(),
+        disclaimer: form.disclaimer.value.trim()
+      };
+      if(!data.title || !data.content){alert('Please add a title and content.');return;}
+      addArticle(data);
+      form.reset();
+    });
+
+    window.addEventListener('storage', renderArticles);
+
+    document.getElementById('current-date').textContent = new Date().toLocaleDateString();
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    renderArticles();
+  </script>
+</body>
+</html>

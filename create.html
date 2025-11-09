@@ -1,45 +1,68 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Create New Article</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Create New Article — Live News</title>
   <style>
-    body{font-family:Inter,system-ui;margin:0;background:#f7f9ff;padding:2rem;color:#111}
-    form{max-width:700px;margin:auto;background:white;padding:2rem;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
-    label{display:block;margin-top:1rem;font-weight:600}
-    input,textarea,select{width:100%;padding:0.6rem;margin-top:0.4rem;border:1px solid #ccc;border-radius:8px;font-size:15px}
-    button{margin-top:1rem;background:#0b5cff;color:white;border:none;padding:0.7rem 1.2rem;border-radius:8px;font-weight:600;cursor:pointer}
-    a{display:block;text-align:center;margin-top:1rem;color:#0b5cff}
+    :root{--accent:#0b5cff;--muted:#6b7280;background:#f7f9ff}
+    body{font-family:Inter,system-ui,Arial;margin:0;background:#f7f9ff;padding:28px;color:#0b1320}
+    h1{text-align:center;color:var(--accent);margin:0 0 18px}
+    form{max-width:820px;margin:0 auto;background:#fff;padding:20px;border-radius:12px;box-shadow:0 8px 24px rgba(12,24,48,0.06)}
+    label{display:block;margin-top:12px;color:var(--muted);font-weight:600}
+    input, textarea, select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(0,0,0,0.08);margin-top:6px;font-size:15px}
+    textarea{min-height:160px}
+    .actions{display:flex;gap:8px;margin-top:14px;align-items:center}
+    button{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+    button[disabled]{opacity:0.6;cursor:not-allowed}
+    a{display:block;text-align:center;margin-top:10px;color:var(--muted);text-decoration:none}
+    .hint{font-size:13px;color:var(--muted);margin-top:8px}
   </style>
 </head>
 <body>
-  <h1 style="text-align:center;color:#0b5cff;">✍️ Create a New Article</h1>
-  <form id="form">
-    <label>Title</label>
-    <input id="title" required />
-    <label>Author</label>
-    <input id="author" placeholder="Your name" />
-    <label>Category</label>
-    <select id="category">
+  <h1>✍️ Create a New Article</h1>
+
+  <form id="form" autocomplete="off">
+    <label for="kicker">Kicker</label>
+    <input id="kicker" type="text" placeholder="Breaking, Update, etc." />
+
+    <label for="title">Headline <span style="color:#b91c1c">*</span></label>
+    <input id="title" type="text" required placeholder="Article headline" />
+
+    <label for="author">Author</label>
+    <input id="author" type="text" placeholder="Jane Doe" />
+
+    <label for="category">Category</label>
+    <select id="category" aria-label="Category">
       <option>General</option>
-      <option>Tech</option>
       <option>World</option>
+      <option>Tech</option>
       <option>Business</option>
+      <option>Sports</option>
+      <option>Local</option>
     </select>
-    <label>Content</label>
-    <textarea id="content" rows="6" required></textarea>
-    <label>Disclaimer</label>
-    <input id="disclaimer" placeholder="Optional" />
-    <button type="submit">Publish</button>
+
+    <label for="content">Content <span style="color:#b91c1c">*</span></label>
+    <textarea id="content" required placeholder="Write the article body (use blank lines for paragraphs)"></textarea>
+
+    <label for="disclaimer">Disclaimer (optional)</label>
+    <input id="disclaimer" type="text" placeholder="Sponsored content, etc." />
+
+    <div class="actions">
+      <button id="publishBtn" type="submit">Publish</button>
+      <button id="cancelBtn" type="button">Cancel</button>
+      <div class="hint" id="status" aria-live="polite"></div>
+    </div>
   </form>
+
   <a href="index.html">← Back to Home</a>
 
-  <!-- Firebase -->
+  <!-- Firebase (modular) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
     import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
 
+    // ====== PUT YOUR FIREBASE CONFIG HERE ======
     const firebaseConfig = {
       apiKey: "AIzaSyCM4HXWCmywdXsZzH0MfR3ZxDHXabSFQs0",
       authDomain: "first-website-81957.firebaseapp.com",
@@ -47,27 +70,71 @@
       storageBucket: "first-website-81957.firebasestorage.app",
       messagingSenderId: "1086322670543",
       appId: "1:1086322670543:web:c55f801b988bb5bbf870ba",
-      measurementId: "G-8MX4G74JZ1" 
+      measurementId: "G-8MX4G74JZ1"
     };
+    // ===========================================
+
+    // initialize
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    document.getElementById("form").addEventListener("submit", e => {
-      e.preventDefault();
-      const data = {
-        title: title.value.trim(),
-        author: author.value.trim(),
-        category: category.value,
-        content: content.value.trim(),
-        disclaimer: disclaimer.value.trim(),
+    // DOM references (fixed bug: get elements explicitly)
+    const form = document.getElementById('form');
+    const kickerEl = document.getElementById('kicker');
+    const titleEl = document.getElementById('title');
+    const authorEl = document.getElementById('author');
+    const categoryEl = document.getElementById('category');
+    const contentEl = document.getElementById('content');
+    const disclaimerEl = document.getElementById('disclaimer');
+    const publishBtn = document.getElementById('publishBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const statusEl = document.getElementById('status');
+
+    function setStatus(msg){
+      statusEl.textContent = msg || '';
+    }
+
+    function disableForm(state){
+      publishBtn.disabled = state;
+      titleEl.disabled = state;
+      authorEl.disabled = state;
+      kickerEl.disabled = state;
+      categoryEl.disabled = state;
+      contentEl.disabled = state;
+      disclaimerEl.disabled = state;
+    }
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      setStatus('');
+      const title = titleEl.value.trim();
+      const content = contentEl.value.trim();
+
+      if (!title || !content) {
+        alert('Please provide both a headline and content.');
+        return;
+      }
+
+      const payload = {
+        kicker: kickerEl.value.trim() || '',
+        title,
+        author: authorEl.value.trim() || 'Anonymous',
+        category: categoryEl.value,
+        content,
+        disclaimer: disclaimerEl.value.trim() || '',
         date: Date.now()
       };
-      const newRef = push(ref(db, "articles"));
-      set(newRef, data).then(() => {
-        alert("Article published!");
-        window.location = "index.html";
-      });
-    });
-  </script>
-</body>
-</html>
+
+      try {
+        disableForm(true);
+        setStatus('Publishing…');
+
+        // push to /articles
+        const articlesRef = ref(db, 'articles');
+        const newRef = push(articlesRef);
+        await set(newRef, payload);
+
+        setStatus('Published ✅ Redirecting to home…');
+        // small delay so user sees confirmation
+        setTimeout(() => {
+          window.location.href = 'index.html';
